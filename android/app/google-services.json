@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "261205197458",
+    "firebase_url": "https://shopping-3e2ac.firebaseio.com",
+    "project_id": "shopping-3e2ac",
+    "storage_bucket": "shopping-3e2ac.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:261205197458:android:4984ec5f4eea8beff1dc4b",
+        "android_client_info": {
+          "package_name": "com.example.stopcovid"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "261205197458-0bndupg3g4v357q6r5mnsmmll7mnekt1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.stopcovid",
+            "certificate_hash": "0e2051174c8018c2e07d2be1d12e178ab327d960"
+          }
+        },
+        {
+          "client_id": "261205197458-9qrmdes26hsum98dhi6aor3r19rk7rjb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDXVGMwSBsHrDAPCQeHB_0Z-CEFKo_Ezk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "261205197458-9qrmdes26hsum98dhi6aor3r19rk7rjb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
