@@ -17,6 +17,10 @@ final GoogleSignIn googleSignIn =  GoogleSignIn();
 final StorageReference storageRef =  FirebaseStorage.instance.ref();
 final userRef = Firestore.instance.collection('users');
 final postRef = Firestore.instance.collection('posts');
+final commentRef = Firestore.instance.collection("comments");
+final activityFeedRef = Firestore.instance.collection("feed");
+final followersRef = Firestore.instance.collection("followers");
+final followingRef = Firestore.instance.collection("following");
 final DateTime timestamp = DateTime.now();
 User currentUser;
 class Home extends StatefulWidget {
@@ -181,8 +185,13 @@ class _HomeState extends State<Home> {
         children: <Widget> [
             //Timeline(),
           RaisedButton(
-            child: Text('Logout'),
-            onPressed: Logout,
+            child: Text('Cette page est en Maintenance',
+            style: TextStyle(
+              fontSize: 30.0
+            ),),
+            onPressed:() {
+
+            },
           ),
             ActivityFeed(),
             Upload(currentUser: currentUser),

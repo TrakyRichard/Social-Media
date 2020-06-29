@@ -1,8 +1,15 @@
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:stopcovid/models/user.dart';
+import 'package:stopcovid/pages/edit_profile.dart';
 import 'package:stopcovid/pages/home.dart';
 import 'package:stopcovid/widgets/header.dart';
+import 'package:stopcovid/widgets/post.dart';
+import 'package:stopcovid/widgets/post.dart';
+import 'package:stopcovid/widgets/post_tile.dart';
 import 'package:stopcovid/widgets/progress.dart';
 
 class Profile extends StatefulWidget {
@@ -15,6 +22,67 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   final String currentUserId = currentUser?.id;
+  String postOrientation = "grid";
+  bool isFollowing = false;
+  bool isLoading = false;
+  int postCount = 0;
+  int followerCount = 0;
+  int followingCount = 0;
+  List<Post> posts = [];
+  void initState(){
+    super.initState();
+    getProfilePost();
+    getFollowers();
+    getFollowing();
+    checkIfFollowing();
+  }
+
+  checkIfFollowing() async{
+    DocumentSnapshot doc = await followersRef
+            .document(widget.profileId)
+            .collection('userFollowers')
+            .document(currentUserId)
+            .get();
+    setState(() {
+      isFollowing = doc.exists;
+    });
+  }
+
+  getFollowers() async {
+    QuerySnapshot snapshot = await followersRef
+            .document(widget.profileId)
+            .collection("userFollowers")
+            .getDocuments();
+      setState(() {
+        followerCount = snapshot.documents.length;
+      });
+  }
+
+  getFollowing() async{
+      QuerySnapshot snapshot = await followingRef
+              .document(widget.profileId)
+              .collection("userFollowing")
+              .getDocuments();
+      setState(() {
+        followingCount = snapshot.documents.length;
+      });
+  }
+
+  getProfilePost() async {
+    setState(() {
+      isLoading = true;
+    });
+    QuerySnapshot snapshot = await postRef.document(widget.profileId)
+    .collection("userPosts")
+    .orderBy('timestamp', descending: true)
+    .getDocuments();
+    setState(() {
+      isLoading = false;
+      postCount = snapshot.documents.length;
+      posts = snapshot.documents.map((doc) => Post.fromDocument(doc))
+      .toList();
+    });
+  }
 
   Column buildCountColumn(String label, int count){
     return Column(
@@ -44,7 +112,7 @@ class _ProfileState extends State<Profile> {
   }
 
   editProfile(){
-    Navigator.push(context, MaterialPageRoute(builder: (context) => editProfile(currentUserId: currentUserId)));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => EditProfile(currentUserId: currentUserId)));
   }
 
   Container buildButton({ String text, Function function}){
@@ -58,15 +126,15 @@ class _ProfileState extends State<Profile> {
           child: Text(
             text,
             style: TextStyle(
-              color: Colors.white,
+              color: isFollowing ? Colors.black : Colors.white,
               fontWeight: FontWeight.bold
             ),
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.orange,
+            color: isFollowing ? Colors.white :  Colors.orange,
             border: Border.all(
-              color: Colors.black
+              color: isFollowing ? Colors.grey : Colors.orange,
             ),
             borderRadius: BorderRadius.circular(5.0),
 
@@ -85,7 +153,84 @@ class _ProfileState extends State<Profile> {
         text: "Editer votre Profil",
         function: editProfile
       );
+    } else if(isFollowing){
+      return buildButton(text: "Se Désabonné", function: handleUnFollowUser);
     }
+    else if(!isFollowing){
+      return buildButton(text: "S'abonné", function: handleFollowUser);
+    }
+  }
+
+  handleUnFollowUser() {
+    setState(() {
+      isFollowing = false;
+    });
+    // Remove the Follower
+    followersRef
+        .document(widget.profileId)
+        .collection("userFollowers")
+        .document(currentUserId)
+        .get().then((doc) {
+            if(doc.exists){
+              doc.reference.delete();
+            }
+    });
+    // Remove Following
+    followingRef.document(currentUserId)
+        .collection("userFollowing")
+        .document(widget.profileId)
+        .get().then((doc) {
+          if(doc.exists){
+            doc.reference.delete();
+          }
+    });
+
+    // delete the activity item for them
+    activityFeedRef
+        .document(widget.profileId)
+        .collection("feedItems")
+        .document(currentUserId)
+        .get().then((doc) {
+          if(doc.exists){
+            doc.reference.delete();
+          }
+    });
+  }
+
+  handleFollowUser(){
+    setState(() {
+      isFollowing = true;
+    });
+    // Make auth user follower of That ANOTHER user (Update their followers collection
+    followersRef
+      .document(widget.profileId)
+      .collection("userFollowers")
+      .document(currentUserId)
+      .setData({
+
+      });
+    // // Put that user on your following collection (update your following
+    // collection}
+    followingRef.document(currentUserId)
+      .collection("userFollowing")
+      .document(widget.profileId)
+      .setData({
+    });
+
+    // Add Activity feed item for that user to notify about new followers
+
+    activityFeedRef
+      .document(widget.profileId)
+      .collection("feedItems")
+      .document(currentUserId)
+      .setData({
+          "type": "follow",
+          "ownerId": widget.profileId,
+          "username": currentUser.username,
+          "userId": currentUserId,
+          "userProfileImg": currentUser.photoUrl,
+          "timestamp": timestamp
+    });
   }
 
   buildProfileHeader() {
@@ -93,7 +238,7 @@ class _ProfileState extends State<Profile> {
       future: userRef.document(widget.profileId).get(),
       builder: (context, snapshot) {
         if(!snapshot.hasData) {
-          return circularProgress();
+          return linearProgress(context);
         }
         User user = User.fromDocument(snapshot.data);
         return Padding(
@@ -115,9 +260,9 @@ class _ProfileState extends State<Profile> {
                             mainAxisSize: MainAxisSize.max,
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: <Widget>[
-                              buildCountColumn("Post", 0),
-                              buildCountColumn("Follower", 0),
-                              buildCountColumn("Following", 0),
+                              buildCountColumn("Post", postCount),
+                              buildCountColumn("Follower", followerCount),
+                              buildCountColumn("Following", followingCount),
                             ],
                           ),
                           Row(
@@ -166,13 +311,94 @@ class _ProfileState extends State<Profile> {
       },
     );
   }
+
+  buildProfilePost(){
+    if(isLoading){
+      return linearProgress(context);
+    } else if(posts.isEmpty){
+      return  Container(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            SvgPicture.asset("assets/images/no_content.svg", height: 200.0,),
+            Padding(padding: EdgeInsets.only(top: 20.0),
+              child: RaisedButton(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Text("Aucune Publications", style: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 40.0,
+                  fontWeight: FontWeight.bold,
+                ),
+                ),
+                color: Colors.deepOrange,
+              ),
+            )
+          ],
+        ),
+      );
+    }
+    else if(postOrientation == "grid"){
+      List<GridTile> gridTitles = [];
+      posts.forEach((post) {
+        gridTitles.add(GridTile(child: PostTile(post: post,)));
+      });
+      return GridView.count(
+        crossAxisCount: 3,
+        childAspectRatio: 1.0,
+        mainAxisSpacing: 1.5,
+        crossAxisSpacing: 1.5,
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        children: gridTitles,
+      );
+    }
+
+    else if(postOrientation == "list"){
+      return Column(
+        children: posts,
+      );
+    }
+  }
+
+  setPostOrientation(String postOrientation){
+    setState(() {
+      this.postOrientation = postOrientation;
+    });
+  }
+  buildTooglePostOrientation(){
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        IconButton(
+          onPressed: () => setPostOrientation("grid"),
+          icon: Icon(Icons.grid_on),
+          color: postOrientation == "grid" ? Theme.of(context).primaryColor
+          : Colors.grey,
+        ),
+        IconButton(
+          onPressed: () => setPostOrientation("list"),
+          icon: Icon(Icons.list),
+          color: postOrientation == "list" ? Theme.of(context).primaryColor
+              : Colors.grey,
+        )
+      ],
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: header(context,titleText: "Profile"),
       body:ListView(
         children: <Widget>[
-          buildProfileHeader()
+          buildProfileHeader(),
+          Divider(),
+          buildTooglePostOrientation(),
+          Divider(
+            height: 0.0,
+          ),
+          buildProfilePost()
         ],
       ),
     );
