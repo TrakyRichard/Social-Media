@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-AppBar header(context, { bool isAppTitle = false, String titleText,
-  removeBackButton = false}) {
+AppBar header(context,
+    {bool isAppTitle = false, String titleText, removeBackButton = false}) {
   return AppBar(
     automaticallyImplyLeading: removeBackButton ? false : true,
     title: Text(
-      isAppTitle ? "StopCovid" : titleText,
+      isAppTitle ? "#CS Media" : titleText,
       style: TextStyle(
         color: Colors.white,
         fontFamily: isAppTitle ? "Signatra" : "",

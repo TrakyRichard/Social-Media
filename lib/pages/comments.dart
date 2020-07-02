@@ -6,107 +6,97 @@ import 'package:stopcovid/widgets/header.dart';
 import 'package:stopcovid/widgets/progress.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-
-
 class Comments extends StatefulWidget {
-    final String postId;
-    final String postOwnerId;
-    final String postMediaUrl;
+  final String postId;
+  final String postOwnerId;
+  final String postMediaUrl;
 
-    Comments({
-        this.postId,
-        this.postOwnerId,
-        this.postMediaUrl
-    });
+  Comments({this.postId, this.postOwnerId, this.postMediaUrl});
   @override
   _CommentsState createState() => _CommentsState(
       postId: this.postId,
       postOwnerId: this.postOwnerId,
-      postMediaUrl: this.postMediaUrl
-  );
+      postMediaUrl: this.postMediaUrl);
 }
 
 class _CommentsState extends State<Comments> {
-    TextEditingController commentController = TextEditingController();
-    final String postId;
-    final String postOwnerId;
-    final String postMediaUrl;
+  TextEditingController commentController = TextEditingController();
+  final String postId;
+  final String postOwnerId;
+  final String postMediaUrl;
 
-    _CommentsState({
-        this.postId,
-        this.postOwnerId,
-        this.postMediaUrl
-    });
+  _CommentsState({this.postId, this.postOwnerId, this.postMediaUrl});
 
-    buildComments(){
-        return StreamBuilder(
-          stream: commentRef.document(postId).collection("comments")
-          .orderBy("timestamp", descending: false).snapshots(),
-          builder: (context, snapshot){
-            if(!snapshot.hasData){
-              return circularProgress();
-            }
-            List<Comment> comments = [];
-            snapshot.data.documents.forEach((doc) {
-              comments.add(Comment.fromDocument(doc));
-            });
-            return ListView(
-              children: comments,
-            );
-          },
+  buildComments() {
+    return StreamBuilder(
+      stream: commentRef
+          .document(postId)
+          .collection("comments")
+          .orderBy("timestamp", descending: false)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return circularProgress();
+        }
+        List<Comment> comments = [];
+        snapshot.data.documents.forEach((doc) {
+          comments.add(Comment.fromDocument(doc));
+        });
+        return ListView(
+          children: comments,
         );
-    }
+      },
+    );
+  }
 
-    addComment(){
-      commentRef
-        .document(postId)
-        .collection("comments")
-          .add({
-              "username": currentUser.username,
-              "comment": commentController.text,
-              "timestamp": timestamp,
-              "avatarUrl": currentUser.photoUrl,
-              "userId": currentUser.id
+  addComment() {
+    commentRef.document(postId).collection("comments").add({
+      "username": currentUser.username,
+      "comment": commentController.text,
+      "timestamp": timestamp,
+      "avatarUrl": currentUser.photoUrl,
+      "userId": currentUser.id
+    });
+    bool isNotPostOwner = postOwnerId != currentUser.id;
+    if (isNotPostOwner) {
+      activityFeedRef.document(postOwnerId).collection("feedItems").add({
+        "type": "comment",
+        "commentData": commentController.text,
+        "timestamp": timestamp,
+        "postId": postId,
+        "userId": currentUser.id,
+        "username": currentUser.username,
+        "userProfileImg": currentUser.photoUrl,
+        "mediaUrl": postMediaUrl,
       });
-      bool isNotPostOwner = postOwnerId != currentUser.id;
-      if(isNotPostOwner){
-          activityFeedRef.document(postOwnerId)
-              .collection("feedItems")
-              .add({
-            "type": "comment",
-            "commentData": commentController.text,
-            "timestamp": timestamp,
-            "postId": postId,
-            "userId": currentUser.id,
-            "username": currentUser.username,
-            "userProfileImg": currentUser.photoUrl,
-            "mediaUrl": postMediaUrl,
-          });
-      }
-      commentController.clear();
     }
+    commentController.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: header(context, titleText: "Commentd"),
-        body: Column(
-            children: <Widget>[
-                Expanded(child: buildComments(),),
-                Divider(),
-                ListTile(
-                    title: TextFormField(
-                        controller: commentController,
-                        decoration: InputDecoration(labelText: "Entrer votre commentaire" ),
-                    ),
-                    trailing: OutlineButton(
-                        onPressed: addComment,
-                        borderSide: BorderSide.none,
-                        child: Text("Post"),
-                    ),
-                )
-            ],
-        ),
+      appBar: header(context, titleText: "Commentd"),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: buildComments(),
+          ),
+          Divider(),
+          ListTile(
+            title: TextFormField(
+              controller: commentController,
+              decoration:
+                  InputDecoration(labelText: "Entrer votre commentaire"),
+            ),
+            trailing: OutlineButton(
+              onPressed: addComment,
+              borderSide: BorderSide.none,
+              child: Text("Post"),
+            ),
+          )
+        ],
+      ),
     );
   }
 }
@@ -118,15 +108,14 @@ class Comment extends StatelessWidget {
   final String comment;
   final Timestamp timestamp;
 
-  Comment({
-    this.username,
-    this.userId,
-    this.avatarUrl,
-    this.comment,
-    this.timestamp
-  });
+  Comment(
+      {this.username,
+      this.userId,
+      this.avatarUrl,
+      this.comment,
+      this.timestamp});
 
-  factory Comment.fromDocument(DocumentSnapshot doc){
+  factory Comment.fromDocument(DocumentSnapshot doc) {
     return Comment(
       username: doc['username'],
       userId: doc['userId'],

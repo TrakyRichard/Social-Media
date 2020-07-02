@@ -100,6 +100,7 @@ class _PostState extends State<Post> {
           return linearProgress(context);
         }
         User user = User.fromDocument(snapshot.data);
+        bool isPostOwner = currentUserId == ownerId;
         return ListTile(
           leading: CircleAvatar(
             backgroundImage: CachedNetworkImageProvider(user.photoUrl),
@@ -114,13 +115,83 @@ class _PostState extends State<Post> {
             ),
           ),
           subtitle: Text(location),
-          trailing: IconButton(
-            onPressed: () => print('Deleting Post'),
-            icon: Icon(Icons.more_vert),
-          ),
+          trailing: isPostOwner
+              ? IconButton(
+                  onPressed: () => handleDeletePost(context),
+                  icon: Icon(Icons.delete_outline),
+                )
+              : Text(''),
         );
       },
     );
+  }
+
+  handleDeletePost(BuildContext parentContext) {
+    return showDialog(
+        context: parentContext,
+        builder: (context) {
+          return SimpleDialog(
+            title: Text('Remove this Post'),
+            children: <Widget>[
+              SimpleDialogOption(
+                onPressed: () {
+                  Navigator.pop(context);
+                  deletePost();
+                },
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            ],
+          );
+        });
+  }
+
+  // to delete the post current Id and Owner id must be egal. so they can be used interchangeably
+  deletePost() async {
+    // delete post Itself
+    postRef
+        .document(ownerId)
+        .collection('userPosts')
+        .document(postId)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+
+    // Delete the uploaded Image of the post
+    storageRef.child('post_$postId.jpg').delete();
+    // then delete all activity notification
+    QuerySnapshot activityFeedSnapshot = await activityFeedRef
+        .document(ownerId)
+        .collection('feedItems')
+        .where('postId', isEqualTo: postId)
+        .getDocuments();
+
+    activityFeedSnapshot.documents.forEach((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+
+    // Then delete comments
+    QuerySnapshot commentSnapshot =
+        await commentRef.document(postId).collection('comments').getDocuments();
+    commentSnapshot.documents.forEach((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
   }
 
   handleLikePost() {
@@ -161,40 +232,38 @@ class _PostState extends State<Post> {
     }
   }
 
-  addLikeToActivityFeed(){
+  addLikeToActivityFeed() {
     // add a notification to the postOwner's activity feed only only if
     // comment made by other users (for avoid getting notification for our own like)
     bool isNotPostOwner = currentUserId != ownerId;
-    if(isNotPostOwner){
-        activityFeedRef
-            .document(ownerId)
-            .collection("feedItem")
-            .document(postId)
-            .setData({
-          "type": "like",
-          "username": currentUser.username,
-          "userId": currentUser.id,
-          "userProfileImg": currentUser.photoUrl,
-          "postId": postId,
-          "mediaUrl": mediaUrl,
-          "timestamp": timestamp
-        });
-    }
-
-  }
-
-  removeLikeFromActivityFeed(){
-    bool isNotPostOwner = currentUserId != ownerId;
-    if(isNotPostOwner){
+    if (isNotPostOwner) {
       activityFeedRef
           .document(ownerId)
           .collection("feedItem")
           .document(postId)
-          .get().then((doc) => {
-        if(doc.exists){
-          doc.reference.delete()
-        }
+          .setData({
+        "type": "like",
+        "username": currentUser.username,
+        "userId": currentUser.id,
+        "userProfileImg": currentUser.photoUrl,
+        "postId": postId,
+        "mediaUrl": mediaUrl,
+        "timestamp": timestamp
       });
+    }
+  }
+
+  removeLikeFromActivityFeed() {
+    bool isNotPostOwner = currentUserId != ownerId;
+    if (isNotPostOwner) {
+      activityFeedRef
+          .document(ownerId)
+          .collection("feedItem")
+          .document(postId)
+          .get()
+          .then((doc) => {
+                if (doc.exists) {doc.reference.delete()}
+              });
     }
   }
 
@@ -204,7 +273,11 @@ class _PostState extends State<Post> {
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
-          cachedNetworkImage(mediaUrl),
+          Container(
+            height: 400.0,
+            width: double.infinity,
+            child: cachedNetworkImage(mediaUrl),
+          ),
           showHeart
               ? Animator(
                   duration: Duration(milliseconds: 500),

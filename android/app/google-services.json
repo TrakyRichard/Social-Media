@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "261205197458-6tvgdkcmpq31bs6ih4tunfeij5vclqte.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.stopcovid",
+            "certificate_hash": "b3aab9a3efcd3aed6c5d9e1ac90cf90a7acf094d"
+          }
+        },
+        {
           "client_id": "261205197458-0bndupg3g4v357q6r5mnsmmll7mnekt1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

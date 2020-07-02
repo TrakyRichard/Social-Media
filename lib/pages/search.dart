@@ -12,19 +12,20 @@ class Search extends StatefulWidget {
   _SearchState createState() => _SearchState();
 }
 
-class _SearchState extends State<Search> {
+class _SearchState extends State<Search>
+    with AutomaticKeepAliveClientMixin<Search> {
   TextEditingController searchController = TextEditingController();
   Future<QuerySnapshot> searchResultFuture;
-  handleSearch(String query){
+  handleSearch(String query) {
     Future<QuerySnapshot> users = userRef
-      .where("displayName", isGreaterThanOrEqualTo: query)
-      .getDocuments();
+        .where("displayName", isGreaterThanOrEqualTo: query)
+        .getDocuments();
     setState(() {
       searchResultFuture = users;
     });
   }
 
-  clearSearch(){
+  clearSearch() {
     searchController.clear();
   }
 
@@ -32,25 +33,22 @@ class _SearchState extends State<Search> {
     return AppBar(
       backgroundColor: Colors.white,
       title: TextFormField(
-        controller: searchController,
-        decoration: InputDecoration(
-          hintText: "Search for User ...",
-          filled: true,
-          prefixIcon: Icon(
-            Icons.account_box,
-            size: 28.0,
-          ),
-          suffixIcon: IconButton(
-            icon: Icon(
-              Icons.clear
+          controller: searchController,
+          decoration: InputDecoration(
+            hintText: "Search for User ...",
+            filled: true,
+            prefixIcon: Icon(
+              Icons.account_box,
+              size: 28.0,
             ),
-            onPressed: (){
-              clearSearch();
-            },
+            suffixIcon: IconButton(
+              icon: Icon(Icons.clear),
+              onPressed: () {
+                clearSearch();
+              },
+            ),
           ),
-        ),
-        onFieldSubmitted: handleSearch
-      ),
+          onFieldSubmitted: handleSearch),
     );
   }
 
@@ -63,26 +61,29 @@ class _SearchState extends State<Search> {
           children: <Widget>[
             SvgPicture.asset(
               'assets/images/search.svg',
-              height: orientation == Orientation.portrait ? 300.0
-              : 200.0,
+              height: orientation == Orientation.portrait ? 300.0 : 200.0,
             ),
-            Text('Rechercher des Utilisateurs', textAlign: TextAlign.center,style: TextStyle(
-              color: Colors.orange,
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w600,
-              fontSize: 60.0,
-            ),)
+            Text(
+              'Rechercher des Utilisateurs',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.orange,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600,
+                fontSize: 60.0,
+              ),
+            )
           ],
         ),
       ),
     );
   }
 
-  buildSearchResult(){
+  buildSearchResult() {
     return FutureBuilder(
       future: searchResultFuture,
-      builder: (context, snapshot){
-        if(!snapshot.hasData){
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
           return circularProgress();
         }
         List<UserResult> searchResults = [];
@@ -97,12 +98,15 @@ class _SearchState extends State<Search> {
       },
     );
   }
+
+  bool get wantKeepAlive => true;
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     return Scaffold(
       appBar: buildSearchField(),
-      body: searchResultFuture == null ? buildNoContent()
-       : buildSearchResult(),
+      body: searchResultFuture == null ? buildNoContent() : buildSearchResult(),
     );
   }
 }
@@ -125,13 +129,15 @@ class UserResult extends StatelessWidget {
                 backgroundColor: Colors.grey,
                 backgroundImage: CachedNetworkImageProvider(user.photoUrl),
               ),
-              title: Text(user.displayName, style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold
-              ),),
-              subtitle: Text(user.username, style: TextStyle(
-                color: Colors.white
-              ),),
+              title: Text(
+                user.displayName,
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                user.username,
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ),
           Divider(
