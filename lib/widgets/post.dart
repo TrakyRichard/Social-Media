@@ -239,7 +239,7 @@ class _PostState extends State<Post> {
     if (isNotPostOwner) {
       activityFeedRef
           .document(ownerId)
-          .collection("feedItem")
+          .collection("feedItems")
           .document(postId)
           .setData({
         "type": "like",
@@ -258,7 +258,7 @@ class _PostState extends State<Post> {
     if (isNotPostOwner) {
       activityFeedRef
           .document(ownerId)
-          .collection("feedItem")
+          .collection("feedItems")
           .document(postId)
           .get()
           .then((doc) => {

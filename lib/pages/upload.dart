@@ -52,7 +52,7 @@ class _UploadState extends State<Upload>
         context: parentContext,
         builder: (context) {
           return SimpleDialog(
-            title: Text('Create Post'),
+            title: Text('Creer une Publications'),
             children: <Widget>[
               SimpleDialogOption(
                 child: Text('Prendre une photo avec la Camera'),

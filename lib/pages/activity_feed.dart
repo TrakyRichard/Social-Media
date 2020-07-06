@@ -84,8 +84,9 @@ class ActivityFeedItem extends StatelessWidget {
     );
   }
 
-  showPost(context){
-    Navigator.push(context, MaterialPageRoute(builder: (context) => PostScreen(postId: postId, userId: userId,)));
+   showPost(context) async{
+    await userId;
+    await Navigator.push(context, MaterialPageRoute(builder: (context) => PostScreen(postId: postId, userId: userId,)));
   }
 
   configureMediaPreview(context){
@@ -113,13 +114,13 @@ class ActivityFeedItem extends StatelessWidget {
       mediaPreview = Text('');
     }
     if(type == 'like'){
-      activityItemText = 'Liked Your Post';
+      activityItemText = 'à aimer votre post';
     }
     else if(type == 'follow'){
       activityItemText = "Vous suit désormais";
     }
     else if(type == "comment"){
-      activityItemText = "Reponse à $commentData";
+      activityItemText = "à répondu $commentData à votre post";
     }
     else{
       activityItemText = "Error: Unknown type $type";
